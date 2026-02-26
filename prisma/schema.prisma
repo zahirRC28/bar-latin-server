@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+}
+
+model Item {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  ingredients String?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  date        DateTime
+  mediaUrl    String?
+  createdAt   DateTime @default(now())
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  items     Item[]
+  createdAt DateTime @default(now())
+}
