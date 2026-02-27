@@ -27,6 +27,7 @@ model Item {
   price       Float
   ingredients String?
   imageUrl    String?
+  videoUrl    String?
   createdAt   DateTime @default(now())
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -38,6 +39,7 @@ model Event {
   description String?
   date        DateTime
   mediaUrl    String?
+  videoUrl    String?
   createdAt   DateTime @default(now())
 }
 

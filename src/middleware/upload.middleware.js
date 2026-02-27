@@ -33,4 +33,5 @@ const upload = multer({
   },
 });
 
+// Exportar upload con métodos single y fields
 module.exports = upload;

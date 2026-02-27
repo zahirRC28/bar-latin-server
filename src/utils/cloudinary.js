@@ -1,5 +1,6 @@
 const cloudinary = require("cloudinary").v2;
 const { Readable } = require("stream");
+const path = require("path");
 
 // Configurar Cloudinary
 cloudinary.config({
@@ -29,33 +30,44 @@ const uploadToCloudinary = (fileBuffer, filename, folder = "barlatino") => {
 };
 
 // Eliminar archivo de Cloudinary
-const deleteFromCloudinary = (publicId) => {
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader.destroy(publicId, (error, result) => {
-      if (error) reject(error);
-      else resolve(result);
-    });
-  });
+async function deleteFromCloudinary(publicId, url) {
+  // Detectar si es video o imagen por la extensión
+  let resourceType = "image"; // por defecto
+  const videoExtensions = [".mp4", ".mov", ".avi", ".mkv", ".webm"];
+  if (url && videoExtensions.includes(path.extname(url).toLowerCase())) {
+    resourceType = "video";
+  }
+
+  console.log("Deleting:", publicId, "as", resourceType);
+  return cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
+}
+
+const getPublicIdFromUrl = (url) => {
+  try {
+    const urlObj = new URL(url);
+    const pathParts = urlObj.pathname.split('/'); // ["", "v123456", "barlatino", "events", "event-123.mp4"]
+    const uploadIndex = pathParts.findIndex(part => part === "upload");
+    if (uploadIndex === -1) return null;
+
+    let filename = pathParts.slice(uploadIndex + 1).join('/'); // "v123456/barlatino/events/event-123.mp4"
+
+    // Quitar versión si existe (v123456/)
+    const match = filename.match(/^v\d+\/(.+)$/);
+    if (match) filename = match[1]; // "barlatino/events/event-123.mp4"
+
+    // Quitar extensión
+    const dotIndex = filename.lastIndexOf('.');
+    if (dotIndex !== -1) filename = filename.substring(0, dotIndex);
+
+    return filename; // "barlatino/events/event-123"
+  } catch (e) {
+    return null;
+  }
 };
 
 module.exports = {
   cloudinary,
   uploadToCloudinary,
   deleteFromCloudinary,
-  // Extrae el public_id de una URL de Cloudinary
-  getPublicIdFromUrl: (url) => {
-    try {
-      const parts = url.split('/upload/');
-      if (parts.length < 2) return null;
-      let idPart = parts[1];
-      // quitar la versión si existe (v123456/)
-      idPart = idPart.replace(/^v\d+\//, '');
-      // quitar la extensión
-      const dotIndex = idPart.lastIndexOf('.');
-      if (dotIndex !== -1) idPart = idPart.substring(0, dotIndex);
-      return idPart;
-    } catch (e) {
-      return null;
-    }
-  },
+  getPublicIdFromUrl,
 };
